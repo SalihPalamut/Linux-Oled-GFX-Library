@@ -238,7 +238,6 @@ void Linux_GFX::drawFastVLine(int16_t x, int16_t y, int16_t h,
 void Linux_GFX::drawFastHLine(int16_t x, int16_t y, int16_t w,
                               uint16_t color)
 {
-
     writeLine(x, y, x + w - 1, y, color);
 
 }
@@ -1321,7 +1320,8 @@ size_t Linux_GFX::putc(uint8_t c)
         {
             cursor_x = 0;
             cursor_y +=
-                (int16_t)textsize_y * (uint8_t)gfxFont->yAdvance;
+                (int16_t)textsize_y * (uint8_t)gfxFont->yAdvance/2;
+				cursor_y +=gfxFont->yAdvance%5;
         }
         else if (c != '\r')
         {
@@ -1420,22 +1420,11 @@ void Linux_GFX::setRotation(uint8_t x)
 /**************************************************************************/
 void Linux_GFX::setFont(const GFXfont *f)
 {
-    if (f)            // Font struct pointer passed in?
+	if (f)
     {
-        if (!gfxFont)   // And no current font struct?
-        {
-            // Switching from classic to new font behavior.
-            // Move cursor pos down 6 pixels so it's on baseline.
-            cursor_y += 6;
-        }
-    }
-    else if (gfxFont)     // NULL passed.  Current font struct defined?
-    {
-        // Switching from new to classic font behavior.
-        // Move cursor pos up 6 pixels so it's at top-left of char.
-        cursor_y -= 6;
-    }
     gfxFont = (GFXfont *)f;
+    cursor_y +=f->yAdvance/2;
+	}
 }
 
 /**************************************************************************/
@@ -1898,12 +1887,10 @@ void GFXcanvas1::drawPixel(int16_t x, int16_t y, uint16_t color)
             break;
         }
 
-        uint8_t *ptr = &buffer[(x / 8) + y * ((WIDTH + 7) / 8)];
-
         if (color)
-            *ptr |= 0x80 >> (x & 7);
+            buffer[x + (y / 8) * WIDTH] |= (1 << (y & 7));
         else
-            *ptr &= ~(0x80 >> (x & 7));
+            buffer[x + (y / 8) * WIDTH] &= ~(1 << (y & 7));
     }
 }
 
